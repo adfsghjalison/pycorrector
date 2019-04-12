@@ -55,8 +55,9 @@ def _save_data(data_list, data_path):
     with open(data_path, 'w', encoding='utf-8') as f:
         count = 0
         for src, dst in data_list:
-            f.write('src: ' + ' '.join(src) + '\n')
-            f.write('dst: ' + ' '.join(dst) + '\n')
+            f.write(' '.join(src)+" +++$+++ "+' '.join(dst))
+            #f.write('src: ' + ' '.join(src) + '\n')
+            #f.write('dst: ' + ' '.join(dst) + '\n')
             count += 1
         print("save line size:%d to %s" % (count, data_path))
 

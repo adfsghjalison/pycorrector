@@ -71,13 +71,14 @@ def train(train_path='', test_path='', save_vocab_path='', attn_model_path='',
                              hidden_dim=hidden_dim,
                              use_gpu=use_gpu,
                              dropout=dropout).build_model()
-    evaluator = Evaluate(model, attn_model_path, char2id, id2char, maxlen)
-    model.fit_generator(data_generator(input_texts, target_texts, char2id, batch_size, maxlen),
+    '''
+	evaluator = Evaluate(model, attn_model_path, char2id, id2char, maxlen)
+	model.fit_generator(data_generator(input_texts, target_texts, char2id, batch_size, maxlen),
                         steps_per_epoch=(len(input_texts) + batch_size - 1) // batch_size,
                         epochs=epochs,
                         validation_data=get_validation_data(test_input_texts, test_target_texts, char2id, maxlen),
                         callbacks=[evaluator])
-
+    '''
 
 if __name__ == "__main__":
     train(train_path=config.train_path,

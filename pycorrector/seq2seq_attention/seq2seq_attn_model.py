@@ -90,14 +90,15 @@ class Seq2seqAttnModel(object):
         x = embedding(x)
         y = embedding(y)
 
+        print('gpu')
         # encoder，双层双向GRU; decoder，双层单向GRU
         if self.use_gpu:
             # encoder
             x = Bidirectional(CuDNNGRU(int(self.hidden_dim / 2), return_sequences=True))(x)
-            x = Bidirectional(CuDNNGRU(int(self.hidden_dim / 2), return_sequences=True))(x)
+            #x = Bidirectional(CuDNNGRU(int(self.hidden_dim / 2), return_sequences=True))(x)
             # decoder
-            y = CuDNNGRU(self.hidden_dim, return_sequences=True)(y)
-            y = CuDNNGRU(self.hidden_dim, return_sequences=True)(y)
+            #y = CuDNNGRU(self.hidden_dim, return_sequences=True)(y)
+            #y = CuDNNGRU(self.hidden_dim, return_sequences=True)(y)
         else:
             # encoder
             x = Bidirectional(GRU(int(self.hidden_dim / 2), return_sequences=True, dropout=self.dropout))(x)
@@ -105,6 +106,7 @@ class Seq2seqAttnModel(object):
             # decoder
             y = GRU(self.hidden_dim, return_sequences=True, dropout=self.dropout)(y)
             y = GRU(self.hidden_dim, return_sequences=True, dropout=self.dropout)(y)
+        print('build')
 
         xy = Interact()([y, x, x_mask])
         xy = Dense(512, activation='relu')(xy)
