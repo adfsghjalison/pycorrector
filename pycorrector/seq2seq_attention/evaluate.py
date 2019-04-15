@@ -7,6 +7,7 @@
 import numpy as np
 from keras.callbacks import Callback, EarlyStopping
 
+from pycorrector.seq2seq_attention import config
 from pycorrector.seq2seq_attention.corpus_reader import str2id, id2str
 from pycorrector.seq2seq_attention.reader import GO_TOKEN, EOS_TOKEN
 
@@ -50,24 +51,53 @@ def gen_target(input_text, model, char2id, id2char, maxlen=400, topk=3, max_targ
 
 
 class Evaluate(Callback):
-    def __init__(self, model, attn_model_path, char2id, id2char, maxlen):
+    def __init__(self, model, attn_model_path, char2id, id2char, maxlen, log_file, trained):
         super(Evaluate, self).__init__()
+        self.loss = 0.0
         self.lowest = 1e10
+        self.trained = trained
         self.model = model
         self.attn_model_path = attn_model_path
         self.char2id = char2id
         self.id2char = id2char
         self.maxlen = maxlen
+        self.log_file = log_file
 
+    def on_batch_end(self, batch, logs=None):
+        self.loss += logs['loss']
+        if batch % config.print_step == 0:
+            print('loss: {}'.format(self.loss / config.print_step))
+            sents = ['當時第一個常跟他接觸就是父母，',
+                    '雖然這種問題在很短時間內難解決，']
+            # 训练过程中观察一两个例子，显示预测质量提高的过程
+            for sent in sents:
+                target = gen_target(sent, self.model, self.char2id, self.id2char, self.maxlen)
+                print('\ninput: {}'.format(sent))
+                print('output: {}\n'.format(target))
+            """
+            # 保存最优结果
+            if batch % config.save_step == 0:
+                if logs['loss'] <= self.lowest:
+                    self.lowest = logs['loss']
+                    self.model.save_weights(self.attn_model_path)
+                    print('Saving model ...')
+                else:
+                    print('Not Saving ...')
+            """
+            self.loss = 0.0
+    
     def on_epoch_end(self, epoch, logs=None):
-        sents = ['吸烟的行为经常会影响社会里所有的人。',
-                 '科学的发展会带来我们极好的生活。']
-        # 训练过程中观察一两个例子，显示预测质量提高的过程
-        for sent in sents:
-            target = gen_target(sent, self.model, self.char2id, self.id2char, self.maxlen)
-            print('input:' + sent)
-            print('output:' + target)
         # 保存最优结果
+        ep = self.trained + epoch + 1
+        print('Saving model ...')
+        self.model.save_weights(self.attn_model_path)
+        open(self.log_file, 'w').write(str(ep))
+        if ep % 20 == 0:
+            self.model.save_weights("{}.{}".format(self.attn_model_path, ep))
+        """
         if logs['val_loss'] <= self.lowest:
             self.lowest = logs['val_loss']
-            self.model.save_weights(self.attn_model_path)
+        else:
+            print('Not Saving ...')
+        """
+

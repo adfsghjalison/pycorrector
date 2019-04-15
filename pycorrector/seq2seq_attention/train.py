@@ -7,8 +7,8 @@ import sys
 
 sys.path.append('../..')
 import os
-
 import numpy as np
+
 
 from pycorrector.seq2seq_attention import config
 from pycorrector.seq2seq_attention.corpus_reader import CGEDReader, str2id, padding, load_word_dict, save_word_dict
@@ -41,11 +41,12 @@ def get_validation_data(input_texts, target_texts, char2id, maxlen=400):
         return [X, Y], None
 
 
-def train(train_path='', test_path='', save_vocab_path='', attn_model_path='',
+def train(train_path='', test_path='', save_vocab_path='', attn_model_path='', log_file='',
           batch_size=64, epochs=100, maxlen=400, hidden_dim=128, dropout=0.2, use_gpu=False):
     data_reader = CGEDReader(train_path)
     input_texts, target_texts = data_reader.build_dataset(train_path)
     test_input_texts, test_target_texts = data_reader.build_dataset(test_path)
+    return
 
     # load or save word dict
     if os.path.exists(save_vocab_path):
@@ -54,7 +55,7 @@ def train(train_path='', test_path='', save_vocab_path='', attn_model_path='',
         chars = set([i for i in char2id.keys()])
     else:
         print('Training data...')
-        print('input_texts:', input_texts[0])
+        print('input_texts:', input_texts[2])
         print('target_texts:', target_texts[0])
         max_input_texts_len = max([len(text) for text in input_texts])
 
@@ -66,28 +67,35 @@ def train(train_path='', test_path='', save_vocab_path='', attn_model_path='',
         char2id = {j: i for i, j in id2char.items()}
         save_word_dict(char2id, save_vocab_path)
 
+    trained = 0
+
     model = Seq2seqAttnModel(chars,
-                             attn_model_path=attn_model_path,
-                             hidden_dim=hidden_dim,
-                             use_gpu=use_gpu,
-                             dropout=dropout).build_model()
-    '''
-	evaluator = Evaluate(model, attn_model_path, char2id, id2char, maxlen)
-	model.fit_generator(data_generator(input_texts, target_texts, char2id, batch_size, maxlen),
-                        steps_per_epoch=(len(input_texts) + batch_size - 1) // batch_size,
-                        epochs=epochs,
-                        validation_data=get_validation_data(test_input_texts, test_target_texts, char2id, maxlen),
-                        callbacks=[evaluator])
-    '''
+        attn_model_path=attn_model_path,
+        hidden_dim=hidden_dim,
+        use_gpu=use_gpu,
+        dropout=dropout).build_model()
+
+    if os.path.isfile(attn_model_path):
+        trained = int(open(log_file).read())
+
+    evaluator = Evaluate(model, attn_model_path, char2id, id2char, maxlen, log_file, trained)
+    model.fit_generator(data_generator(input_texts, target_texts, char2id, batch_size, maxlen),
+        steps_per_epoch=(len(input_texts) / batch_size + 1),
+        epochs=epochs,
+        validation_data=get_validation_data(test_input_texts, test_target_texts, char2id, maxlen),
+        callbacks=[evaluator])
+    #model.save(attn_model_path+'.end')
+    #print(attn_model_path)
 
 if __name__ == "__main__":
     train(train_path=config.train_path,
-          test_path=config.test_path,
-          save_vocab_path=config.save_vocab_path,
-          attn_model_path=config.attn_model_path,
-          batch_size=config.batch_size,
-          epochs=config.epochs,
-          maxlen=config.maxlen,
-          hidden_dim=config.rnn_hidden_dim,
-          dropout=config.dropout,
-          use_gpu=config.use_gpu)
+        test_path=config.test_path,
+        save_vocab_path=config.save_vocab_path,
+        attn_model_path=config.attn_model_path,
+        log_file=config.log,
+        batch_size=config.batch_size,
+        epochs=config.epochs,
+        maxlen=config.maxlen,
+        hidden_dim=config.rnn_hidden_dim,
+        dropout=config.dropout,
+        use_gpu=config.use_gpu)

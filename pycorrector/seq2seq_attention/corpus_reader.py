@@ -88,8 +88,9 @@ class CGEDReader(Reader):
                 line_dst = f.readline()
                 if not line_src or len(line_src) < 5:
                     break
-                source = line_src.lower()[5:].strip().split()
-                target = line_dst.lower()[5:].strip().split()
+                source = list(line_src.lower())
+                target = list(line_dst.lower())
+                print(source)
                 yield source, target
 
     def unknown_token(self):

@@ -22,7 +22,7 @@ class Inference(object):
             self.chars = set([i for i in self.char2id.keys()])
         else:
             print('not exist vocab path')
-        seq2seq_attn_model = Seq2seqAttnModel(self.chars, attn_model_path=attn_model_path)
+        seq2seq_attn_model = Seq2seqAttnModel(self.chars, attn_model_path=attn_model_path, hidden_dim=config.rnn_hidden_dim, use_gpu=config.use_gpu)
         self.model = seq2seq_attn_model.build_model()
         self.maxlen = maxlen
 
@@ -31,30 +31,21 @@ class Inference(object):
 
 
 if __name__ == "__main__":
-    inputs = [
-        '由我起开始做。',
-        '没有解决这个问题，',
-        '由我起开始做。',
-        '由我起开始做',
-        '不能人类实现更美好的将来。',
-        '这几年前时间，',
-        '歌曲使人的感到快乐，',
-        '会能够大幅减少互相抱怨的情况。'
-    ]
     inference = Inference(save_vocab_path=config.save_vocab_path,
                           attn_model_path=config.attn_model_path,
                           maxlen=400)
-    for i in inputs:
-        target = inference.infer(i)
-        print('input:' + i)
-        print('output:' + target)
+    f = open(os.path.join(config.output_dir, 'infer'), 'w')
+    for i, l in enumerate(open(config.infer_path)):
+        if i < config.infer_count:
+            continue
+        l = l.strip()
+        target = inference.infer(l)
+        f.write(l+'\n'+target+'\n\n')
+        if i % 100 == 0:
+            print(i)
+    """
     while True:
-        sent = input('input:')
-        print("output:" + inference.infer(sent))
+        sent = input('input:  ')
+        print("output: " + inference.infer(sent))
+    """
 
-# result:
-# input:由我起开始做。
-# output:我开始做。
-# input:没有解决这个问题，
-# output:没有解决的问题，
-# input:由我起开始做。
